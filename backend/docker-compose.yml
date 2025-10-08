@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: civic-connect-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: civic-connect
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - civic-connect-network
+
+  # Backend API
+  backend:
+    build: .
+    container_name: civic-connect-backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      MONGODB_URI: mongodb://admin:password123@mongodb:27017/civic-connect?authSource=admin
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      JWT_EXPIRES_IN: 7d
+      FRONTEND_URL: http://localhost:3000
+      CLOUDINARY_CLOUD_NAME: your-cloud-name
+      CLOUDINARY_API_KEY: your-api-key
+      CLOUDINARY_API_SECRET: your-api-secret
+    depends_on:
+      - mongodb
+    networks:
+      - civic-connect-network
+    volumes:
+      - ./uploads:/app/uploads
+
+volumes:
+  mongodb_data:
+
+networks:
+  civic-connect-network:
+    driver: bridge
