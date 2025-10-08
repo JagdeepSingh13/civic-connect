@@ -4,7 +4,8 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const MONGODB_URI =
-  process.env.MONGODB_URI || "mongodb://localhost:27017/civic-connect";
+  process.env.MONGODB_URI ||
+  "mongodb+srv://jagdeeps3105:jagdeeps3105@cluster0.hn1cynq.mongodb.net/";
 
 export const connectDatabase = async (): Promise<void> => {
   try {
