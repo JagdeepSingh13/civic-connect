@@ -15,6 +15,7 @@ export interface Complaint {
   description: string;
   location: string;
   image?: string;
+  analysis?: string;
   status: "Pending" | "In Progress" | "Resolved";
   priority?: "Low" | "Medium" | "High";
   tags?: string[];

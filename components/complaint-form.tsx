@@ -121,7 +121,7 @@ export function ComplaintForm() {
         category: formData.category,
         description: formData.description,
         location: formData.location,
-        image: formData.image || undefined,
+        image: formData.image || "",
         priority: formData.priority,
       });
 
@@ -147,13 +147,15 @@ export function ComplaintForm() {
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      // In a real app, you would upload to a server or cloud storage
-      const mockImageUrl = `/placeholder.svg?height=200&width=300&query=${encodeURIComponent(
-        formData.category + " issue"
-      )}`;
-      setFormData((prev) => ({ ...prev, image: mockImageUrl }));
-    }
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      // Convert file to base64
+      const base64String = reader.result as string;
+      setFormData((prev) => ({ ...prev, image: base64String }));
+    };
+    reader.readAsDataURL(file);
   };
 
   return (

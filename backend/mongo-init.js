@@ -34,7 +34,7 @@ db.createCollection("complaints", {
   validator: {
     $jsonSchema: {
       bsonType: "object",
-      required: ["title", "category", "description", "location", "status"],
+      required: ["title", "category", "description", "location"],
       properties: {
         title: {
           bsonType: "string",

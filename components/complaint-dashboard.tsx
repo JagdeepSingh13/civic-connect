@@ -129,6 +129,12 @@ export function ComplaintDashboard() {
               <p className="text-foreground text-pretty">
                 {complaint.description}
               </p>
+              <Badge className={getStatusColor(complaint.status)}>
+                Gemini AI analysis:
+              </Badge>
+              <p className="text-foreground text-pretty">
+                {complaint.analysis}
+              </p>
 
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <MapPin className="w-4 h-4" />

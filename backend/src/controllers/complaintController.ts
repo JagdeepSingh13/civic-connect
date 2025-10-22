@@ -1,6 +1,65 @@
 import { Request, Response } from "express";
 import Complaint, { IComplaint } from "../models/Complaint";
 import { validationResult } from "express-validator";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+const genAI = new GoogleGenerativeAI("AIzaSyBAWbZEctICqunep-k5NklkinoHs6c1Nzs");
+const geminiModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+// In: complaintController.ts
+// Replace your old analyzeImageWithGemini with this one.
+
+export const analyzeImageWithGemini = async (
+  imageDataUrl: string // The full "data:image/png;base64,..." string
+): Promise<{ description: string; category: string }> => {
+  try {
+    // 1. Parse the Data URL to get mimeType and raw data
+    const match = imageDataUrl.match(/^data:(image\/.+);base64,(.+)$/);
+    if (!match) {
+      console.error("Invalid image data URL format");
+      return { description: "Invalid image format", category: "Other" };
+    }
+    if (!match || !match[1] || !match[2]) {
+      // --- END FIX ---
+      console.error("Invalid image data URL format");
+      return { description: "Invalid image format", category: "Other" };
+    }
+
+    const mimeType = match[1]; // e.g., "image/png"
+    const data = match[2]; // The raw base64 data (e.g., "iVBOR...")
+
+    const prompt = `
+      You are an AI civic complaint assistant.
+      Analyze the given image related to a public issue.
+      Provide a brief description of what it shows and predict the most relevant issue category.
+      Categories: Pothole, Garbage Collection, Waterlogging, Street Lighting, Traffic Signal, Park Maintenance, Noise Pollution, Other.
+      Return only JSON:
+      {
+        "description": "...",
+        "category": "..."
+      }
+    `;
+
+    const result = await geminiModel.generateContent([
+      { text: prompt },
+      // 2. Use the parsed mimeType and data
+      { inlineData: { mimeType, data } },
+    ]);
+
+    const output = result.response.text();
+    const jsonMatch = output.match(/\{[\s\S]*\}/);
+
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]);
+    }
+
+    console.warn("Gemini did not return valid JSON:", output);
+    return { description: output, category: "Other" };
+  } catch (err) {
+    console.error("Gemini analysis error:", err);
+    return { description: "Analysis failed", category: "Other" };
+  }
+};
 
 interface AuthenticatedRequest extends Request {
   user?: {
@@ -16,20 +75,22 @@ export const createComplaint = async (
   res: Response
 ): Promise<void> => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      res.status(400).json({
-        success: false,
-        message: "Validation failed",
-        errors: errors.array(),
-      });
-      return;
-    }
-
-    const complaintData = {
+    const complaintData: any = {
       ...req.body,
       createdBy: req.user?.id || null,
     };
+
+    // If image exists, analyze using Gemini
+    if (req.body.image) {
+      const analysis = await analyzeImageWithGemini(req.body.image);
+      complaintData.analysis = analysis.description;
+      console.log(analysis);
+
+      // Auto-set category if AI detects it
+      if (analysis.category && analysis.category !== "Other") {
+        complaintData.category = analysis.category;
+      }
+    }
 
     const complaint = new Complaint(complaintData);
     await complaint.save();

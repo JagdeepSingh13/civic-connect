@@ -6,6 +6,7 @@ export interface IComplaint extends Document {
   description: string;
   location: string;
   image?: string;
+  analysis?: string;
   status: "Pending" | "In Progress" | "Resolved";
   createdBy?: string; // User ID who created the complaint
   assignedTo?: string; // Admin/Staff ID assigned to handle the complaint
@@ -61,6 +62,12 @@ const ComplaintSchema = new Schema<IComplaint>(
     },
     image: {
       type: String,
+      default: null,
+    },
+    analysis: {
+      type: String,
+      trim: true,
+      maxlength: [1000, "Analysis text cannot exceed 1000 characters"],
       default: null,
     },
     status: {
